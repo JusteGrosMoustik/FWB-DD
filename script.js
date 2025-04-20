@@ -117,3 +117,17 @@ document.querySelector('.command-input').addEventListener('keydown', (event) => 
         event.target.value = ''; // Réinitialise l'entrée
     }
 });
+
+document.getElementById('myForm').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Empêche le comportement par défaut si nécessaire
+        document.querySelector('button[type="submit"]').click();
+    }
+});
+
+document.getElementById('myForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // Empêche le rechargement de la page
+    const submitButton = document.querySelector('button[type="submit"]');
+    submitButton.disabled = true; // Désactive le bouton
+    submitButton.textContent = 'Validé'; // Change le texte du bouton
+});
