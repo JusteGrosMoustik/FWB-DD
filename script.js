@@ -110,3 +110,10 @@ document.querySelector('.command-input').addEventListener('input', (event) => {
         event.target.value = ''; // Réinitialise l'entrée
     }
 });
+
+document.querySelector('.command-input').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        handleCommand(event.target.value.trim()); // Valide la commande
+        event.target.value = ''; // Réinitialise l'entrée
+    }
+});
