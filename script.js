@@ -87,4 +87,26 @@ const POIS = [
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
   }
-  
+
+  function handleCommand(input) {
+    const [command, action, ...args] = input.split(' ');
+
+    if (command === 'F1' || command === 'F2') {
+        const caseId = command === 'F1' ? 'case1' : 'case2';
+        const caseElement = document.getElementById(caseId);
+
+        if (action === 'clear') {
+            caseElement.textContent = ''; // Efface le contenu de la case
+        } else {
+            const newContent = args.join(' ');
+            caseElement.textContent += (caseElement.textContent ? '\n' : '') + newContent; // Ajoute avec retour à la ligne
+        }
+    }
+}
+
+document.querySelector('.command-input').addEventListener('input', (event) => {
+    if (event.inputType === 'insertText' && event.data === '\n') {
+        handleCommand(event.target.value.trim());
+        event.target.value = ''; // Réinitialise l'entrée
+    }
+});

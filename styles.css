@@ -1,0 +1,13 @@
+/* ...existing code... */
+.command-input {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    /* ...existing styles... */
+}
+
+.case {
+    transform: scale(1.3); /* Augmente l'échelle de 130% */
+    transform-origin: top left;
+}
+/* ...existing code... */
