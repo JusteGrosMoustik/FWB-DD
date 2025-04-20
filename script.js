@@ -96,10 +96,10 @@ const POIS = [
         const caseElement = document.getElementById(caseId);
 
         if (action === 'clear') {
-            caseElement.textContent = ''; // Efface le contenu de la case
+            caseElement.innerHTML = ''; // Efface le contenu de la case
         } else {
             const newContent = args.join(' ');
-            caseElement.textContent += (caseElement.textContent ? '\n' : '') + newContent; // Ajoute avec retour à la ligne
+            caseElement.innerHTML += (caseElement.innerHTML ? '<br>' : '') + newContent; // Ajoute avec un retour à la ligne
         }
     }
 }

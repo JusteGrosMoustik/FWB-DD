@@ -1,13 +1,15 @@
 /* ...existing code... */
 .command-input {
-    position: fixed;
+    position: static; /* Annule l'alignement en bas */
     bottom: 0;
     width: 100%;
     /* ...existing styles... */
 }
 
 .case {
-    transform: scale(1.3); /* Augmente l'échelle de 130% */
+    font-size: 130%; /* Augmente la taille du texte */
+    width: 130%; /* Augmente la largeur */
+    height: 130%; /* Augmente la hauteur */
     transform-origin: top left;
 }
 /* ...existing code... */
