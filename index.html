@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Carte Interactive</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(9, 96px);
+      grid-template-rows: repeat(9, 96px);
+      border: 2px solid #333;
+      margin: 20px;
+    }
+    .cell {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      border: 1px solid #999;
+      background-image: url('base.png');
+      background-size: cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      text-align: center;
+    }
+    .cell-header {
+      pointer-events: none;
+      position: absolute;
+      top: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: bold;
+      font-size: 10px;
+      z-index: 2;
+    }
+    .clear-btn {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 10px;
+      padding: 2px 4px;
+      cursor: pointer;
+    }
+    .cell-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+    .prompt {
+      width: 80%;
+      margin-bottom: 30px;
+    }
+    .prompt input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid" id="grid"></div>
+  <div class="prompt">
+    <input type="text" id="commandInput" placeholder="Ex: B2 ringworm ou reset">
+  </div>
+
+  <script>
+    const grid = document.getElementById('grid');
+    const dataTypes = ["ringworm", "testing_st", "shipwreck", "shipwreck_rad", "titanium", "stravidium", "falling_wreck", "guild", "fief"];
+    const cells = {};
+
+    const rows = 9;
+    const cols = 9;
+    const colLabels = 'ABCDEFGHI';
+
+    for (let row = rows; row >= 1; row--) {
+      for (let col = 0; col < cols; col++) {
+        const id = colLabels[col] + row;
+
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.id = id;
+
+        const label = document.createElement('div');
+        label.className = 'cell-header';
+        label.innerText = id;
+
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'clear-btn';
+        clearBtn.innerText = 'clear';
+        clearBtn.onclick = () => {
+          cells[id] = [];
+          updateCell(id);
+        };
+
+        const content = document.createElement('div');
+        content.className = 'cell-content';
+        cell.appendChild(label);
+        cell.appendChild(clearBtn);
+        cell.appendChild(content);
+        grid.appendChild(cell);
+        cells[id] = [];
+      }
+    }
+
+    function updateCell(id) {
+      const cell = document.getElementById(id);
+      const data = cells[id];
+      cell.style.backgroundImage = data.length === 0 ? "url('base.png')" : `url('${data[data.length - 1]}.png')`;
+
+      const content = cell.querySelector('.cell-content');
+      content.innerHTML = '';
+
+      data.forEach(d => {
+        const line = document.createElement('div');
+        line.innerText = d;
+        content.appendChild(line);
+      });
+    }
+
+    function resetGrid() {
+      Object.keys(cells).forEach(id => {
+        cells[id] = [];
+        updateCell(id);
+      });
+    }
+
+    document.getElementById('commandInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        const input = e.target.value.trim();
+        if (input.toLowerCase() === 'reset') {
+          resetGrid();
+          e.target.value = '';
+          return;
+        }
+
+        const parts = input.split(' ');
+        if (parts.length === 2) {
+          const [target, data] = parts;
+          if (cells[target] && dataTypes.includes(data)) {
+            cells[target].push(data);
+            updateCell(target);
+            e.target.value = '';
+          } else {
+            alert('Commande invalide.');
+          }
+        } else {
+          alert('Format de commande invalide. Utilisez : A1 ringworm ou reset');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
