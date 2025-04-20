@@ -1,0 +1,39 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f2f2f2;
+  }
+  
+  #grid-container {
+    display: grid;
+    grid-template-columns: repeat(9, 60px);
+    grid-template-rows: repeat(9, 60px);
+    gap: 2px;
+    justify-content: center;
+    margin: 20px auto;
+  }
+  
+  .cell {
+    background-color: white;
+    border: 1px solid #ccc;
+    line-height: 60px;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 12px;
+  }
+  
+  #prompt-container {
+    margin-top: 20px;
+  }
+  
+  input#prompt {
+    width: 200px;
+    padding: 8px;
+    font-size: 14px;
+  }
+  
+  #message {
+    margin-top: 10px;
+    color: red;
+  }
+  
