@@ -5,10 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Carte Dynamique</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/styles/main.css">
 </head>
 <body>
   <h1>Carte Dynamique</h1>
   <div id="grid-container"></div>
+  <div class="case" style="border: 1px solid black; position: relative;">
+    <div class="nom" style="position: absolute; top: 5px; text-align: center;">Nom 1</div>
+  </div>
   <div id="prompt-container">
     <input type="text" id="prompt" placeholder="Ex: F2 ringmouth" />
     <button onclick="handlePrompt()">Valider</button>
