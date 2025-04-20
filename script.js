@@ -10,7 +10,6 @@ const POIS = [
   const gridContainer = document.getElementById("grid-container");
   const message = document.getElementById("message");
   
-  // Créer la grille 9x9 (A1 en bas à gauche, I9 en haut à droite)
   const letters = "ABCDEFGHI";
   for (let row = 9; row >= 1; row--) {
     for (let col = 0; col < 9; col++) {
@@ -18,7 +17,17 @@ const POIS = [
       const cell = document.createElement("div");
       cell.className = "cell";
       cell.id = cellId;
-      cell.textContent = localStorage.getItem(cellId) || "";
+  
+      const label = document.createElement("div");
+      label.className = "cell-label";
+      label.textContent = cellId;
+  
+      const value = document.createElement("div");
+      value.className = "cell-value";
+      value.textContent = localStorage.getItem(cellId) || "";
+  
+      cell.appendChild(label);
+      cell.appendChild(value);
       gridContainer.appendChild(cell);
     }
   }
@@ -31,7 +40,8 @@ const POIS = [
       return;
     }
     const [cellId, poi] = parts;
-    if (!document.getElementById(cellId)) {
+    const cell = document.getElementById(cellId);
+    if (!cell) {
       message.textContent = "Case invalide.";
       return;
     }
@@ -39,7 +49,9 @@ const POIS = [
       message.textContent = "POI invalide.";
       return;
     }
-    document.getElementById(cellId).textContent = poi;
+  
+    const valueDiv = cell.querySelector(".cell-value");
+    valueDiv.textContent = poi;
     localStorage.setItem(cellId, poi);
     message.textContent = "";
     document.getElementById("prompt").value = "";
@@ -59,7 +71,11 @@ const POIS = [
       for (let col = 0; col < 9; col++) {
         const cellId = letters[col] + row;
         localStorage.removeItem(cellId);
-        document.getElementById(cellId).textContent = "";
+        const cell = document.getElementById(cellId);
+        if (cell) {
+          const valueDiv = cell.querySelector(".cell-value");
+          if (valueDiv) valueDiv.textContent = "";
+        }
       }
     }
   }

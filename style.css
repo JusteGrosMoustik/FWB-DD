@@ -16,10 +16,27 @@ body {
   .cell {
     background-color: white;
     border: 1px solid #ccc;
-    line-height: 60px;
-    vertical-align: middle;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding-top: 2px;
     font-size: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .cell-label {
+    font-weight: bold;
+    font-size: 10px;
+    color: #555;
+    margin-bottom: 4px;
+  }
+  
+  .cell-value {
+    font-size: 12px;
+    word-wrap: break-word;
+    text-align: center;
   }
   
   #prompt-container {
