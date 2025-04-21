@@ -12,36 +12,51 @@
       flex-direction: column;
       align-items: center;
     }
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(9, 96px);
-      grid-template-rows: repeat(9, 96px);
+      grid-template-columns: repeat(9, 115px);
+      grid-template-rows: repeat(9, 115px);
       border: 2px solid #333;
       margin: 20px;
     }
+
     .cell {
       position: relative;
-      width: 96px;
-      height: 96px;
+      width: 115px;
+      height: 115px;
       border: 1px solid #999;
-      background-image: url('textures/base.png');
+      background-image: url('base.png');
       background-size: cover;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
       text-align: center;
+      overflow: hidden;
     }
+
+    .cell-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 1;
+    }
+
     .cell-header {
-      pointer-events: none;
       position: absolute;
       top: 2px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-weight: bold;
+      left: 5px;
       font-size: 10px;
+      font-weight: bold;
       z-index: 2;
+      background-color: rgba(255, 255, 255, 0.6);
+      padding: 1px 3px;
+      border-radius: 3px;
     }
+
     .clear-btn {
       position: absolute;
       top: 2px;
@@ -49,18 +64,14 @@
       font-size: 10px;
       padding: 2px 4px;
       cursor: pointer;
+      z-index: 2;
     }
-    .cell-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
-    }
+
     .prompt {
       width: 80%;
       margin-bottom: 30px;
     }
+
     .prompt input {
       width: 100%;
       padding: 10px;
@@ -74,11 +85,16 @@
     <input type="text" id="commandInput" placeholder="Ex: B2 ringworm ou reset">
   </div>
 
-  <script>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const supabaseUrl = 'https://mzubfcwxnlqvsctrskyb.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16dWJmY3d4bmxxdnNjdHJza3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMzM4MjcsImV4cCI6MjA2MDgwOTgyN30.Ql2pN4rkNAPSoe2R5nVhfqfT6DMkoztNGWAfkF8zZiY';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const grid = document.getElementById('grid');
     const dataTypes = ["ringworm", "testing_st", "shipwreck", "shipwreck_rad", "titanium", "stravidium", "falling_wreck", "guild", "fief"];
     const cells = {};
-
     const rows = 9;
     const cols = 9;
     const colLabels = 'ABCDEFGHI';
@@ -98,13 +114,16 @@
         const clearBtn = document.createElement('button');
         clearBtn.className = 'clear-btn';
         clearBtn.innerText = 'clear';
-        clearBtn.onclick = () => {
+        clearBtn.onclick = async () => {
           cells[id] = [];
+          await saveCellToSupabase(id);
           updateCell(id);
         };
 
         const content = document.createElement('div');
         content.className = 'cell-content';
+        content.id = `content-${id}`;
+
         cell.appendChild(label);
         cell.appendChild(clearBtn);
         cell.appendChild(content);
@@ -115,12 +134,14 @@
 
     function updateCell(id) {
       const cell = document.getElementById(id);
+      const content = document.getElementById(`content-${id}`);
       const data = cells[id];
-      cell.style.backgroundImage = data.length === 0 ? "url('base.png')" : `url('${data[data.length - 1]}.png')`;
 
-      const content = cell.querySelector('.cell-content');
+      cell.style.backgroundImage = data.length === 0
+        ? "url('base.png')"
+        : `url('${data[data.length - 1]}.png')`;
+
       content.innerHTML = '';
-
       data.forEach(d => {
         const line = document.createElement('div');
         line.innerText = d;
@@ -128,18 +149,39 @@
       });
     }
 
-    function resetGrid() {
-      Object.keys(cells).forEach(id => {
-        cells[id] = [];
-        updateCell(id);
+    async function saveCellToSupabase(id) {
+      await supabase.from('cells').upsert({
+        cell_id: id,
+        values: cells[id]
       });
     }
 
-    document.getElementById('commandInput').addEventListener('keypress', function(e) {
+    async function loadMapFromSupabase() {
+      const { data, error } = await supabase.from('cells').select('*');
+      if (error) {
+        console.error('Erreur chargement:', error);
+        return;
+      }
+
+      data.forEach(entry => {
+        cells[entry.cell_id] = entry.values || [];
+        updateCell(entry.cell_id);
+      });
+    }
+
+    async function resetGrid() {
+      for (const id in cells) {
+        cells[id] = [];
+        await saveCellToSupabase(id);
+        updateCell(id);
+      }
+    }
+
+    document.getElementById('commandInput').addEventListener('keypress', async function(e) {
       if (e.key === 'Enter') {
-        const input = e.target.value.trim();
-        if (input.toLowerCase() === 'reset') {
-          resetGrid();
+        const input = e.target.value.trim().toLowerCase();
+        if (input === 'reset') {
+          await resetGrid();
           e.target.value = '';
           return;
         }
@@ -147,18 +189,23 @@
         const parts = input.split(' ');
         if (parts.length === 2) {
           const [target, data] = parts;
-          if (cells[target] && dataTypes.includes(data)) {
-            cells[target].push(data);
-            updateCell(target);
+          if (cells[target.toUpperCase()] && dataTypes.includes(data)) {
+            const cellId = target.toUpperCase();
+            cells[cellId].push(data);
+            await saveCellToSupabase(cellId);
+            updateCell(cellId);
             e.target.value = '';
           } else {
             alert('Commande invalide.');
           }
         } else {
-          alert('Format de commande invalide. Utilisez : A1 ringworm ou reset');
+          alert('Format incorrect. Ex: A1 ringworm');
         }
       }
     });
+
+    // Charger la carte au démarrage
+    loadMapFromSupabase();
   </script>
 </body>
 </html>
