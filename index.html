@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Carte Interactive</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,51 +13,38 @@
       flex-direction: column;
       align-items: center;
     }
-
     .grid {
       display: grid;
-      grid-template-columns: repeat(9, 115px);
-      grid-template-rows: repeat(9, 115px);
+      grid-template-columns: repeat(9, 96px);
+      grid-template-rows: repeat(9, 96px);
       border: 2px solid #333;
       margin: 20px;
+      transform: scale(1.2);
+      transform-origin: top center;
     }
-
     .cell {
       position: relative;
-      width: 115px;
-      height: 115px;
+      width: 96px;
+      height: 96px;
       border: 1px solid #999;
-      background-image: url('base.png');
+      background-image: url('textures/base.png');
       background-size: cover;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      overflow: hidden;
-    }
-
-    .cell-content {
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      font-size: 12px;
-      font-weight: bold;
-      z-index: 1;
+      text-align: center;
     }
-
     .cell-header {
+      pointer-events: none;
       position: absolute;
       top: 2px;
-      left: 5px;
-      font-size: 10px;
+      left: 50%;
+      transform: translateX(-50%);
       font-weight: bold;
+      font-size: 10px;
       z-index: 2;
-      background-color: rgba(255, 255, 255, 0.6);
-      padding: 1px 3px;
-      border-radius: 3px;
     }
-
     .clear-btn {
       position: absolute;
       top: 2px;
@@ -64,18 +52,20 @@
       font-size: 10px;
       padding: 2px 4px;
       cursor: pointer;
-      z-index: 2;
     }
-
     .prompt {
       width: 80%;
       margin-bottom: 30px;
     }
-
     .prompt input {
       width: 100%;
       padding: 10px;
       font-size: 16px;
+    }
+    .data-entry {
+      margin-top: 12px;
+      font-size: 12px;
+      line-height: 1.2;
     }
   </style>
 </head>
@@ -85,16 +75,15 @@
     <input type="text" id="commandInput" placeholder="Ex: B2 ringworm ou reset">
   </div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
+  <script>
     const supabaseUrl = 'https://mzubfcwxnlqvsctrskyb.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16dWJmY3d4bmxxdnNjdHJza3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMzM4MjcsImV4cCI6MjA2MDgwOTgyN30.Ql2pN4rkNAPSoe2R5nVhfqfT6DMkoztNGWAfkF8zZiY';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     const grid = document.getElementById('grid');
     const dataTypes = ["ringworm", "testing_st", "shipwreck", "shipwreck_rad", "titanium", "stravidium", "falling_wreck", "guild", "fief"];
     const cells = {};
+
     const rows = 9;
     const cols = 9;
     const colLabels = 'ABCDEFGHI';
@@ -114,74 +103,76 @@
         const clearBtn = document.createElement('button');
         clearBtn.className = 'clear-btn';
         clearBtn.innerText = 'clear';
-        clearBtn.onclick = async () => {
+        clearBtn.onclick = () => {
           cells[id] = [];
-          await saveCellToSupabase(id);
           updateCell(id);
         };
 
-        const content = document.createElement('div');
-        content.className = 'cell-content';
-        content.id = `content-${id}`;
-
         cell.appendChild(label);
         cell.appendChild(clearBtn);
-        cell.appendChild(content);
         grid.appendChild(cell);
         cells[id] = [];
       }
     }
 
-    function updateCell(id) {
+    async function updateCell(id) {
       const cell = document.getElementById(id);
-      const content = document.getElementById(`content-${id}`);
       const data = cells[id];
+      cell.style.backgroundImage = data.length === 0 ? "url('textures/base.png')" : `url('textures/${data[data.length - 1]}.png')`;
 
-      cell.style.backgroundImage = data.length === 0
-        ? "url('base.png')"
-        : `url('${data[data.length - 1]}.png')`;
+      // Remove old entries (except header and button)
+      const children = Array.from(cell.childNodes).filter(n => !n.classList || (!n.classList.contains('cell-header') && !n.classList.contains('clear-btn')));
+      children.forEach(c => cell.removeChild(c));
 
-      content.innerHTML = '';
       data.forEach(d => {
         const line = document.createElement('div');
+        line.className = 'data-entry';
         line.innerText = d;
-        content.appendChild(line);
+        cell.appendChild(line);
       });
+
+      await saveToSupabase(id);
     }
 
-    async function saveCellToSupabase(id) {
-      await supabase.from('cells').upsert({
-        cell_id: id,
-        values: cells[id]
-      });
-    }
+    async function saveToSupabase(id) {
+      const { error } = await supabase
+        .from('cells_data')
+        .upsert({ id: id, data: cells[id] });
 
-    async function loadMapFromSupabase() {
-      const { data, error } = await supabase.from('cells').select('*');
       if (error) {
-        console.error('Erreur chargement:', error);
+        console.error("Erreur de sauvegarde Supabase :", error);
+      }
+    }
+
+    async function loadDataFromSupabase() {
+      const { data, error } = await supabase
+        .from('cells_data')
+        .select('*');
+
+      if (error) {
+        console.error("Erreur de chargement depuis Supabase :", error);
         return;
       }
 
-      data.forEach(entry => {
-        cells[entry.cell_id] = entry.values || [];
-        updateCell(entry.cell_id);
+      data.forEach(row => {
+        cells[row.id] = row.data;
+        updateCell(row.id);
       });
     }
 
-    async function resetGrid() {
-      for (const id in cells) {
+    function resetGrid() {
+      Object.keys(cells).forEach(async id => {
         cells[id] = [];
-        await saveCellToSupabase(id);
         updateCell(id);
-      }
+        await supabase.from('cells_data').delete().eq('id', id);
+      });
     }
 
-    document.getElementById('commandInput').addEventListener('keypress', async function(e) {
+    document.getElementById('commandInput').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
-        const input = e.target.value.trim().toLowerCase();
-        if (input === 'reset') {
-          await resetGrid();
+        const input = e.target.value.trim();
+        if (input.toLowerCase() === 'reset') {
+          resetGrid();
           e.target.value = '';
           return;
         }
@@ -189,23 +180,20 @@
         const parts = input.split(' ');
         if (parts.length === 2) {
           const [target, data] = parts;
-          if (cells[target.toUpperCase()] && dataTypes.includes(data)) {
-            const cellId = target.toUpperCase();
-            cells[cellId].push(data);
-            await saveCellToSupabase(cellId);
-            updateCell(cellId);
+          if (cells[target] && dataTypes.includes(data)) {
+            cells[target].push(data);
+            updateCell(target);
             e.target.value = '';
           } else {
             alert('Commande invalide.');
           }
         } else {
-          alert('Format incorrect. Ex: A1 ringworm');
+          alert('Format de commande invalide. Utilisez : A1 ringworm ou reset');
         }
       }
     });
 
-    // Charger la carte au démarrage
-    loadMapFromSupabase();
+    loadDataFromSupabase();
   </script>
 </body>
 </html>
